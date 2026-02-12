@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { getCurrentProfile } from '../../actions/profile';
 import Spinner from '../layout/Spinner';
 
-const dashboard = ({ getCurrentProfile, auth: { user } , profile: { profile, loading } }) => {
+const Dashboard = ({ getCurrentProfile, auth: { user } , profile: { profile, loading } }) => {
   useEffect(() => {
     getCurrentProfile();
   }, []);
@@ -28,7 +28,7 @@ const dashboard = ({ getCurrentProfile, auth: { user } , profile: { profile, loa
   </Fragment>
 }
 
-dashboard.propTypes = {
+Dashboard.propTypes = {
   getCurrentProfile: PropTypes.func.isRequired,
   auth: PropTypes.object.isRequired,
   profile: PropTypes.object.isRequired
@@ -39,4 +39,4 @@ const mapStateToProps = state => ({
   profile: state.profile
 })
 
-export default connect(mapStateToProps, { getCurrentProfile })(dashboard);
+export default connect(mapStateToProps, { getCurrentProfile })(Dashboard);
