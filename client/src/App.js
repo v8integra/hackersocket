@@ -18,6 +18,7 @@ import AddExperience from './components/profile-form/AddExperience';
 import AddEducation from './components/profile-form/AddEducation';
 import Profiles from './components/profiles/Profiles';
 import Profile from './components/profiles/Profile';
+import Posts from './components/posts/Posts';
 
 if(localStorage.token) {
   setAuthToken(localStorage.token);
@@ -36,15 +37,16 @@ const App = () => {
         <Alert />
         <Routes>
           <Route exact path="/" element={ <Landing /> } />
-          <Route exact path="register" element={ <Register /> } />
-          <Route exact path="login" element={ <Login /> } />
-          <Route exact path="profiles" element={ <Profiles /> } />
-          <Route exact path="profile/:id" element={ <Profile /> } />
-          <PrivateRoute exact path="dashboard" element={ <Dashboard /> } />
-          <PrivateRoute exact path='create-profile' element={ <CreateProfile /> } />
-          <PrivateRoute exact path='edit-profile' element={ <EditProfile /> } />
-          <PrivateRoute exact path='add-experience' element={ <AddExperience /> } />
-          <PrivateRoute exact path='add-education' element={ <AddEducation /> } />
+          <Route exact path="/register" element={ <Register /> } />
+          <Route exact path="/login" element={ <Login /> } />
+          <Route exact path="/profiles" element={ <Profiles /> } />
+          <Route exact path="/profile/:id" element={ <Profile /> } />
+          <PrivateRoute exact path="/dashboard" element={ <Dashboard /> } />
+          <PrivateRoute exact path='/create-profile' element={ <CreateProfile /> } />
+          <PrivateRoute exact path='/edit-profile' element={ <EditProfile /> } />
+          <PrivateRoute exact path='/add-experience' element={ <AddExperience /> } />
+          <PrivateRoute exact path='/add-education' element={ <AddEducation /> } />
+          <PrivateRoute exact path='/posts' element={ <Posts /> } />
         </Routes>
       </Fragment>
     </Router>
