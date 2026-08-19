@@ -1,0 +1,199 @@
+// HackerSocket data model.
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  DEVELOPER
+  COMPANY
+  ADMIN
+}
+
+enum JobLevel {
+  ENTRY
+  MID
+  SENIOR
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+}
+
+// --- Auth.js (NextAuth) required models ---
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- Core app models ---
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String?   @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String?
+  image         String?
+  role          UserRole  @default(DEVELOPER)
+
+  headline       String?
+  bio            String?  @db.Text
+  location       String?
+  githubUsername String?
+  linkedinUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  experiences Experience[]
+  educations  Education[]
+  posts       Post[]
+  comments    Comment[]
+  likes       Like[]
+  company     Company?
+}
+
+model Experience {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  company     String
+  startDate   DateTime
+  endDate     DateTime?
+  description String?   @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Education {
+  id        String    @id @default(cuid())
+  userId    String
+  school    String
+  degree    String?
+  field     String?
+  startDate DateTime
+  endDate   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Company {
+  id          String  @id @default(cuid())
+  ownerId     String  @unique
+  name        String
+  logoUrl     String?
+  website     String?
+  description String? @db.Text
+
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  jobPostings JobPosting[]
+}
+
+model JobPosting {
+  id          String    @id @default(cuid())
+  companyId   String
+  title       String
+  description String    @db.Text
+  level       JobLevel
+  location    String?
+  remote      Boolean   @default(false)
+  salaryMin   Int?
+  salaryMax   Int?
+  applyUrl    String?
+  applyEmail  String?
+  status      JobStatus @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([level, status])
+  @@index([companyId])
+}
