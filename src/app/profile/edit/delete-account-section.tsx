@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { signOut } from "next-auth/react";
 import { deleteAccount } from "@/lib/actions/account";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,11 @@ export function DeleteAccountSection({
     setError(null);
     startTransition(async () => {
       const result = await deleteAccount();
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      await signOut({ redirect: true, redirectTo: "/" });
     });
   };
 

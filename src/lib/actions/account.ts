@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function deleteAccount() {
@@ -11,5 +11,5 @@ export async function deleteAccount() {
 
   await prisma.user.delete({ where: { id: session.user.id } });
 
-  await signOut({ redirectTo: "/" });
+  return { error: null };
 }
