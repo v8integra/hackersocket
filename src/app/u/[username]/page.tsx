@@ -11,6 +11,7 @@ import { FollowButton } from "@/components/profile/follow-button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 function formatMonth(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
@@ -102,7 +103,17 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 )}
               </div>
             </div>
-            <FollowButton targetUserId={user.id} initialFollowing={isFollowing} />
+            <div className="flex items-center gap-2">
+              {session?.user?.id && session.user.id !== user.id && user.username && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href={`/messages/${user.username}`}>Message</Link>}
+                />
+              )}
+              <FollowButton targetUserId={user.id} initialFollowing={isFollowing} />
+            </div>
           </CardContent>
         </Card>
 
