@@ -95,7 +95,10 @@ model User {
   posts       Post[]
   comments    Comment[]
   likes       Like[]
+  stars       Star[]
   company     Company?
+  following   Follow[]     @relation("UserFollowing")
+  followers   Follow[]     @relation("UserFollowers")
 }
 
 model Experience {
@@ -135,6 +138,7 @@ model Post {
   author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments Comment[]
   likes    Like[]
+  stars    Star[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -163,6 +167,31 @@ model Like {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
+}
+
+model Star {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
 }
 
 model Company {

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { toggleLike, deletePost } from "@/lib/actions/posts";
+import { toggleLike, toggleStar, deletePost } from "@/lib/actions/posts";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -24,6 +24,7 @@ export function PostCard({ post, linkToDetail = true }: { post: FeedPost; linkTo
   const { data: session } = useSession();
   const [liked, setLiked] = useState(post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [starred, setStarred] = useState(post.starredByMe);
   const [pending, startTransition] = useTransition();
   const [removed, setRemoved] = useState(false);
 
@@ -35,6 +36,13 @@ export function PostCard({ post, linkToDetail = true }: { post: FeedPost; linkTo
     setLikeCount((count) => count + (nextLiked ? 1 : -1));
     startTransition(async () => {
       await toggleLike(post.id);
+    });
+  };
+
+  const handleStar = () => {
+    setStarred((current) => !current);
+    startTransition(async () => {
+      await toggleStar(post.id);
     });
   };
 
@@ -96,6 +104,14 @@ export function PostCard({ post, linkToDetail = true }: { post: FeedPost; linkTo
               {post.commentCount} {post.commentCount === 1 ? "comment" : "comments"}
             </span>
           )}
+          <button
+            type="button"
+            onClick={handleStar}
+            disabled={!session}
+            className={`ml-auto text-xs ${starred ? "text-brand" : "text-muted-foreground"} disabled:opacity-50`}
+          >
+            {starred ? "Starred" : "Star"}
+          </button>
         </div>
       </CardContent>
     </Card>

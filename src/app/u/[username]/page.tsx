@@ -7,6 +7,7 @@ import { fetchAllRepos, pickShowcaseRepos } from "@/lib/github";
 import { getPostsByAuthor } from "@/lib/posts";
 import { Navbar } from "@/components/layout/navbar";
 import { PostCard } from "@/components/posts/post-card";
+import { FollowButton } from "@/components/profile/follow-button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     include: {
       experiences: { orderBy: { startDate: "desc" } },
       educations: { orderBy: { startDate: "desc" } },
+      _count: { select: { followers: true } },
     },
   });
 
@@ -53,9 +55,18 @@ export default async function PublicProfilePage({ params }: PageProps) {
   }
 
   const session = await auth();
-  const [allRepos, posts] = await Promise.all([
+  const [allRepos, posts, isFollowing] = await Promise.all([
     user.githubUsername ? fetchAllRepos(user.githubUsername) : Promise.resolve([]),
     getPostsByAuthor(user.id, session?.user?.id),
+    session?.user?.id
+      ? prisma.follow
+          .findUnique({
+            where: {
+              followerId_followingId: { followerId: session.user.id, followingId: user.id },
+            },
+          })
+          .then((follow) => !!follow)
+      : Promise.resolve(false),
   ]);
   const repos = pickShowcaseRepos(allRepos, user.showcasedRepos);
 
@@ -64,28 +75,34 @@ export default async function PublicProfilePage({ params }: PageProps) {
       <Navbar />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
         <Card>
-          <CardContent className="flex items-start gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-brand-muted text-brand text-lg">
-                {(user.name ?? user.username ?? "?")[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-lg font-medium">{user.name ?? user.username}</h1>
-              <p className="font-mono text-sm text-muted-foreground">@{user.username}</p>
-              {user.headline && <p className="mt-1 text-sm">{user.headline}</p>}
-              {user.location && (
-                <p className="mt-1 text-xs text-muted-foreground">{user.location}</p>
-              )}
-              {user.linkedinUrl && (
-                <Link
-                  href={user.linkedinUrl}
-                  className="mt-1 inline-block text-xs text-brand hover:underline"
-                >
-                  LinkedIn
-                </Link>
-              )}
+          <CardContent className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="bg-brand-muted text-brand text-lg">
+                  {(user.name ?? user.username ?? "?")[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-lg font-medium">{user.name ?? user.username}</h1>
+                <p className="font-mono text-sm text-muted-foreground">@{user.username}</p>
+                {user.headline && <p className="mt-1 text-sm">{user.headline}</p>}
+                {user.location && (
+                  <p className="mt-1 text-xs text-muted-foreground">{user.location}</p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {user._count.followers} {user._count.followers === 1 ? "follower" : "followers"}
+                </p>
+                {user.linkedinUrl && (
+                  <Link
+                    href={user.linkedinUrl}
+                    className="mt-1 inline-block text-xs text-brand hover:underline"
+                  >
+                    LinkedIn
+                  </Link>
+                )}
+              </div>
             </div>
+            <FollowButton targetUserId={user.id} initialFollowing={isFollowing} />
           </CardContent>
         </Card>
 

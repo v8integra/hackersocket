@@ -54,6 +54,24 @@ export async function toggleLike(postId: string) {
   return { liked: !existing };
 }
 
+export async function toggleStar(postId: string) {
+  const userId = await requireUserId();
+
+  const existing = await prisma.star.findUnique({
+    where: { postId_userId: { postId, userId } },
+  });
+
+  if (existing) {
+    await prisma.star.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.star.create({ data: { postId, userId } });
+  }
+
+  revalidatePath("/");
+  revalidatePath(`/posts/${postId}`);
+  return { starred: !existing };
+}
+
 export async function addComment(postId: string, formData: FormData) {
   const userId = await requireUserId();
   const content = String(formData.get("content") ?? "").trim();
