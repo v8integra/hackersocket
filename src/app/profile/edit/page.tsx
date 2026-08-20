@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ProfileForm } from "./profile-form";
 import { ExperienceSection } from "./experience-section";
 import { EducationSection } from "./education-section";
+import { DeleteAccountSection } from "./delete-account-section";
 
 export default async function EditProfilePage() {
   const session = await auth();
@@ -13,13 +14,16 @@ export default async function EditProfilePage() {
     redirect("/login");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      experiences: { orderBy: { startDate: "desc" } },
-      educations: { orderBy: { startDate: "desc" } },
-    },
-  });
+  const [user, company] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        experiences: { orderBy: { startDate: "desc" } },
+        educations: { orderBy: { startDate: "desc" } },
+      },
+    }),
+    prisma.company.findUnique({ where: { ownerId: session.user.id }, select: { id: true } }),
+  ]);
 
   if (!user) {
     redirect("/login");
@@ -65,6 +69,11 @@ export default async function EditProfilePage() {
             <EducationSection educations={user.educations} />
           </CardContent>
         </Card>
+
+        <DeleteAccountSection
+          username={user.username ?? user.email}
+          ownsCompany={!!company}
+        />
       </main>
     </>
   );

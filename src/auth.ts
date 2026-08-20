@@ -14,6 +14,10 @@ if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID,
       clientSecret: process.env.AUTH_GITHUB_SECRET,
+      // GitHub verifies account emails itself, so it's safe to auto-link a GitHub
+      // sign-in to an existing credentials account with the same email, rather than
+      // creating a second, disconnected account.
+      allowDangerousEmailAccountLinking: true,
     }),
   );
 }
