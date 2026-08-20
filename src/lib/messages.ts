@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export type ConversationPreview = {
@@ -21,9 +22,21 @@ export type ThreadMessage = {
   fromMe: boolean;
 };
 
+// "involves me, and I haven't deleted it for myself" - deleting a message only
+// hides it on the deleter's side, the other party still sees it until they
+// delete it too.
+function visibleToUser(userId: string): Prisma.MessageWhereInput {
+  return {
+    OR: [
+      { senderId: userId, deletedBySenderAt: null },
+      { recipientId: userId, deletedByRecipientAt: null },
+    ],
+  };
+}
+
 export async function getConversations(userId: string): Promise<ConversationPreview[]> {
   const messages = await prisma.message.findMany({
-    where: { OR: [{ senderId: userId }, { recipientId: userId }] },
+    where: visibleToUser(userId),
     orderBy: { createdAt: "desc" },
     include: {
       sender: { select: { id: true, name: true, username: true } },
@@ -61,15 +74,22 @@ export async function getConversations(userId: string): Promise<ConversationPrev
 }
 
 export async function getUnreadMessageCount(userId: string): Promise<number> {
-  return prisma.message.count({ where: { recipientId: userId, readAt: null } });
+  return prisma.message.count({
+    where: { recipientId: userId, readAt: null, deletedByRecipientAt: null },
+  });
 }
 
 export async function getThread(userId: string, otherUserId: string): Promise<ThreadMessage[]> {
   const messages = await prisma.message.findMany({
     where: {
-      OR: [
-        { senderId: userId, recipientId: otherUserId },
-        { senderId: otherUserId, recipientId: userId },
+      AND: [
+        {
+          OR: [
+            { senderId: userId, recipientId: otherUserId },
+            { senderId: otherUserId, recipientId: userId },
+          ],
+        },
+        visibleToUser(userId),
       ],
     },
     orderBy: { createdAt: "asc" },

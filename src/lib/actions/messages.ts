@@ -53,3 +53,36 @@ export async function markThreadRead(otherUserId: string) {
 
   revalidatePath("/messages");
 }
+
+export async function deleteMessage(messageId: string) {
+  const userId = await requireUserId();
+
+  const message = await prisma.message.findUnique({ where: { id: messageId } });
+  if (!message || (message.senderId !== userId && message.recipientId !== userId)) {
+    return { error: "Message not found." };
+  }
+
+  const isSender = message.senderId === userId;
+  const otherSideAlreadyDeleted = isSender
+    ? Boolean(message.deletedByRecipientAt)
+    : Boolean(message.deletedBySenderAt);
+
+  if (otherSideAlreadyDeleted) {
+    // both sides have now deleted it - nothing left referencing this row
+    await prisma.message.delete({ where: { id: messageId } });
+  } else {
+    await prisma.message.update({
+      where: { id: messageId },
+      data: isSender ? { deletedBySenderAt: new Date() } : { deletedByRecipientAt: new Date() },
+    });
+  }
+
+  const otherUserId = isSender ? message.recipientId : message.senderId;
+  const otherUser = await prisma.user.findUnique({
+    where: { id: otherUserId },
+    select: { username: true },
+  });
+  if (otherUser?.username) revalidatePath(`/messages/${otherUser.username}`);
+  revalidatePath("/messages");
+  return { error: null };
+}

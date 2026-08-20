@@ -197,12 +197,14 @@ model Follow {
 }
 
 model Message {
-  id          String    @id @default(cuid())
-  senderId    String
-  recipientId String
-  content     String    @db.Text
-  readAt      DateTime?
-  createdAt   DateTime  @default(now())
+  id                   String    @id @default(cuid())
+  senderId             String
+  recipientId          String
+  content              String    @db.Text
+  readAt               DateTime?
+  deletedBySenderAt    DateTime?
+  deletedByRecipientAt DateTime?
+  createdAt            DateTime  @default(now())
 
   sender    User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   recipient User @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)

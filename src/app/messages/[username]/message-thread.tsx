@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { sendMessage, markThreadRead } from "@/lib/actions/messages";
+import { sendMessage, markThreadRead, deleteMessage } from "@/lib/actions/messages";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { ThreadMessage } from "@/lib/messages";
@@ -56,35 +56,65 @@ export function MessageThread({
     });
   };
 
+  const handleDelete = (messageId: string) => {
+    setMessages((current) => current.filter((m) => m.id !== messageId));
+    startTransition(async () => {
+      await deleteMessage(messageId);
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">No messages yet. Say hello.</p>
         )}
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.fromMe ? "justify-end" : "justify-start"}`}
-          >
+        {messages.map((message) => {
+          const isOptimistic = message.id.startsWith("optimistic-");
+          return (
             <div
-              className={`max-w-[75%] rounded-md px-3 py-2 text-sm ${
-                message.fromMe
-                  ? "bg-brand text-brand-foreground"
-                  : "bg-secondary text-secondary-foreground"
+              key={message.id}
+              className={`flex items-end gap-2 ${
+                message.fromMe ? "justify-end" : "justify-start"
               }`}
             >
-              <p className="whitespace-pre-wrap">{message.content}</p>
-              <p
-                className={`mt-1 font-mono text-[10px] ${
-                  message.fromMe ? "text-brand-foreground/70" : "text-muted-foreground"
+              {message.fromMe && !isOptimistic && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(message.id)}
+                  className="text-xs text-muted-foreground/60 hover:text-destructive"
+                >
+                  Delete
+                </button>
+              )}
+              <div
+                className={`max-w-[75%] rounded-md px-3 py-2 text-sm ${
+                  message.fromMe
+                    ? "bg-brand text-brand-foreground"
+                    : "bg-secondary text-secondary-foreground"
                 }`}
               >
-                {timeAgo(message.createdAt)}
-              </p>
+                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p
+                  className={`mt-1 font-mono text-[10px] ${
+                    message.fromMe ? "text-brand-foreground/70" : "text-muted-foreground"
+                  }`}
+                >
+                  {timeAgo(message.createdAt)}
+                </p>
+              </div>
+              {!message.fromMe && !isOptimistic && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(message.id)}
+                  className="text-xs text-muted-foreground/60 hover:text-destructive"
+                >
+                  Delete
+                </button>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <form ref={formRef} action={handleSubmit} className="flex flex-col gap-2">
         <Textarea name="content" placeholder="Write a message" rows={2} />
