@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fetchAllRepos } from "@/lib/github";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ProfileForm } from "./profile-form";
 import { ExperienceSection } from "./experience-section";
 import { EducationSection } from "./education-section";
+import { ShowcaseReposSection } from "./showcase-repos-section";
 import { DeleteAccountSection } from "./delete-account-section";
 
 export default async function EditProfilePage() {
@@ -28,6 +30,8 @@ export default async function EditProfilePage() {
   if (!user) {
     redirect("/login");
   }
+
+  const repoOptions = user.githubUsername ? await fetchAllRepos(user.githubUsername) : [];
 
   return (
     <>
@@ -69,6 +73,8 @@ export default async function EditProfilePage() {
             <EducationSection educations={user.educations} />
           </CardContent>
         </Card>
+
+        <ShowcaseReposSection repos={repoOptions} initialSelected={user.showcasedRepos} />
 
         <DeleteAccountSection
           username={user.username ?? user.email}

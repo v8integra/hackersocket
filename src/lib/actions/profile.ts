@@ -123,3 +123,19 @@ export async function deleteEducation(educationId: string) {
   await prisma.education.deleteMany({ where: { id: educationId, userId } });
   revalidatePath("/profile/edit");
 }
+
+const MAX_SHOWCASE_REPOS = 6;
+
+export async function updateShowcasedRepos(repoNames: string[]) {
+  const userId = await requireUserId();
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { showcasedRepos: repoNames.slice(0, MAX_SHOWCASE_REPOS) },
+    select: { username: true },
+  });
+
+  revalidatePath("/profile/edit");
+  if (user.username) revalidatePath(`/u/${user.username}`);
+  return { error: null };
+}

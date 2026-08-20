@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { fetchTopRepos } from "@/lib/github";
+import { fetchAllRepos, pickShowcaseRepos } from "@/lib/github";
 import { getPostsByAuthor } from "@/lib/posts";
 import { Navbar } from "@/components/layout/navbar";
 import { PostCard } from "@/components/posts/post-card";
@@ -53,10 +53,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
   }
 
   const session = await auth();
-  const [repos, posts] = await Promise.all([
-    user.githubUsername ? fetchTopRepos(user.githubUsername) : Promise.resolve([]),
+  const [allRepos, posts] = await Promise.all([
+    user.githubUsername ? fetchAllRepos(user.githubUsername) : Promise.resolve([]),
     getPostsByAuthor(user.id, session?.user?.id),
   ]);
+  const repos = pickShowcaseRepos(allRepos, user.showcasedRepos);
 
   return (
     <>
